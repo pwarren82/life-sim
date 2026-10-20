@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Life Sim: Hard-Locked Edition</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; display: flex; flex-direction: column; height: 100vh; max-width: 700px; margin: auto; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    h1 { font-size: 1.1rem; color: var(--accent); }
+    button.icon-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+    
+    #status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 0.85rem; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat-item { color: var(--muted); }
+    .stat-val { color: var(--text); font-weight: bold; }
+    
+    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
+    
+    #input-card { display: flex; gap: 8px; }
+    #move-input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px; font-size: 0.95rem; resize: none; height: 50px; }
+    #exec-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 16px; cursor: pointer; }
+    #exec-btn:disabled { opacity: 0.5; }
+    
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); padding: 20px; align-items: center; justify-content: center; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; }
+    .modal-content textarea, .modal-content input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>LIFE SIMULATOR</h1>
+    <div>
+      <button class="icon-btn" onclick="openSettings()">⚙️ Settings</button>
+      <button class="icon-btn" onclick="resetGame()">🔄 Reset</button>
+    </div>
+  </header>
+
+  <div id="status-card">
+    <div class="stat-item">Protagonist: <span id="stat-name" class="stat-val">Uninitialized</span></div>
+    <div class="stat-item">Age: <span id="stat-age" class="stat-val">--</span></div>
+    <div class="stat-item">Cash / Net: <span id="stat-fin" class="stat-val">--</span></div>
+    <div class="stat-item">Mood / Energy: <span id="stat-mood" class="stat-val">--</span></div>
+  </div>
+
+  <div id="log-container">Welcome to Life Sim. Enter your character initialization details below, or configure your API key in Settings (⚙️).</div>
+
+  <div id="input-card">
+    <textarea id="move-input" placeholder="Type your action / move here..."></textarea>
+    <button id="exec-btn" onclick="handleTurn()">SEND</button>
+  </div>
+
+  <div id="modal">
+    <div class="modal-content">
+      <h3>Settings</h3>
+      <label>Google AI Studio API Key:</label>
+      <input type="password" id="api-key-input" placeholder="Paste AI Studio Key">
+      <label>Master Rules & Prompt:</label>
+      <textarea id="rules-input" rows="8"></textarea>
+      <div style="display:flex; justify-content:space-between; margin-top:8px;">
+        <button class="icon-btn" onclick="closeSettings()">Cancel</button>
+        <button class="icon-btn" style="background:var(--accent); color:#000;" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
+Hard-Locked Realism Life Simulator. Strict 1st-person POV. 
+Enforce strict 6.75/10 difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), and multi-turn chronic fallout.
+Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.`;
+
+    let state = {
+      apiKey: localStorage.getItem('life_sim_api_key') || '',
+      rules: localStorage.getItem('life_sim_rules') || DEFAULT_RULES,
+      statusAnchor: localStorage.getItem('life_sim_anchor') || '',
+      logHistory: localStorage.getItem('life_sim_log') || ''
+    };
+
+    if (state.logHistory) document.getElementById('log-container').innerText = state.logHistory;
+    updateStatusCard(state.statusAnchor);
+
+    function openSettings() {
+      document.getElementById('api-key-input').value = state.apiKey;
+      document.getElementById('rules-input').value = state.rules;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeSettings() { document.getElementById('modal').style.display = 'none'; }
+
+    function saveSettings() {
+      state.apiKey = document.getElementById('api-key-input').value.trim();
+      state.rules = document.getElementById('rules-input').value;
+      localStorage.setItem('life_sim_api_key', state.apiKey);
+      localStorage.setItem('life_sim_rules', state.rules);
+      closeSettings();
+    }
+
+    function resetGame() {
+      if (confirm("Reset current game state?")) {
+        localStorage.removeItem('life_sim_anchor');
+        localStorage.removeItem('life_sim_log');
+        state.statusAnchor = '';
+        state.logHistory = '';
+        location.reload();
+      }
+    }
+
+    function updateStatusCard(yamlText) {
+      if (!yamlText) return;
+      const getVal = (key) => {
+        const m = yamlText.match(new RegExp(`${key}:\\s*(.+)`, 'i'));
+        return m ? m[1].replace(/['"]/g, '').trim() : '--';
+      };
+      document.getElementById('stat-name').innerText = getVal('Protagonist_Name');
+      document.getElementById('stat-age').innerText = getVal('Age');
+      document.getElementById('stat-fin').innerText = getVal('Fin') || getVal('Cash');
+      document.getElementById('stat-mood').innerText = getVal('Mood');
+    }
+
+    async function handleTurn() {
+      const inputEl = document.getElementById('move-input');
+      const action = inputEl.value.trim();
+      if (!action) return;
+      if (!state.apiKey) { alert('Please add your Google AI Studio API key in Settings.'); openSettings(); return; }
+
+      const logEl = document.getElementById('log-container');
+      const btn = document.getElementById('exec-btn');
+      btn.disabled = true;
+      logEl.innerText += `\n\n> Action: ${action}\n\n[Processing turn via Gemini 3.8 Flash...]`;
+      logEl.scrollTop = logEl.scrollHeight;
+
+      const promptPayload = `${state.rules}\n\nPREVIOUS STATUS ANCHOR:\n${state.statusAnchor}\n\nPLAYER ACTION:\n${action}`;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptPayload }] }],
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const reply = data.candidates[0].content.parts[0].text;
+        
+        // Extract YAML Anchor
+        const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
+        if (yamlMatch) {
+          state.statusAnchor = yamlMatch[0];
+          localStorage.setItem('life_sim_anchor', state.statusAnchor);
+          updateStatusCard(state.statusAnchor);
+        }
+
+        state.logHistory = reply;
+        localStorage.setItem('life_sim_log', reply);
+        logEl.innerText = reply;
+        inputEl.value = '';
+
+      } catch (err) {
+        logEl.innerText += `\n\nAPI Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
