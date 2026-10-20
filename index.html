@@ -15,23 +15,28 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; display: flex; flex-direction: column; height: 100vh; max-width: 700px; margin: auto; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
     h1 { font-size: 1.1rem; color: var(--accent); }
     button.icon-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     
-    #status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 0.85rem; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    #status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; margin-bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .stat-item { color: var(--muted); }
     .stat-val { color: var(--text); font-weight: bold; }
+
+    /* Visual Milestone Card */
+    #visual-card { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; }
+    #visual-card img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    #visual-caption { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
     
-    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 10px; }
+    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
     
     #input-card { display: flex; gap: 8px; }
     #move-input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px; font-size: 0.95rem; resize: none; height: 50px; }
     #exec-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 16px; cursor: pointer; }
     #exec-btn:disabled { opacity: 0.5; }
     
-    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); padding: 20px; align-items: center; justify-content: center; }
-    .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; }
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .modal-content textarea, .modal-content input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; margin: 8px 0; }
   </style>
 </head>
@@ -52,6 +57,11 @@
     <div class="stat-item">Mood / Energy: <span id="stat-mood" class="stat-val">--</span></div>
   </div>
 
+  <div id="visual-card">
+    <img id="visual-img" src="" alt="Milestone Portrait">
+    <div id="visual-caption">Character Milestone Visual</div>
+  </div>
+
   <div id="log-container">Welcome to Life Sim. Enter your character initialization details below, or configure your API key in Settings (⚙️).</div>
 
   <div id="input-card">
@@ -61,11 +71,16 @@
 
   <div id="modal">
     <div class="modal-content">
-      <h3>Settings</h3>
+      <h3>Settings & Rules</h3>
       <label>Google AI Studio API Key:</label>
       <input type="password" id="api-key-input" placeholder="Paste AI Studio Key">
+      
       <label>Master Rules & Prompt:</label>
       <textarea id="rules-input" rows="8"></textarea>
+      
+      <label>Active Identity Lock Roster (Visual DNA):</label>
+      <textarea id="roster-dna-input" rows="4" placeholder="Character Visual DNA stored here..."></textarea>
+
       <div style="display:flex; justify-content:space-between; margin-top:8px;">
         <button class="icon-btn" onclick="closeSettings()">Cancel</button>
         <button class="icon-btn" style="background:var(--accent); color:#000;" onclick="saveSettings()">Save</button>
@@ -77,21 +92,34 @@
     const DEFAULT_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
 Hard-Locked Realism Life Simulator. Strict 1st-person POV. 
 Enforce strict 6.75/10 difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), and multi-turn chronic fallout.
-Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.`;
+Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.
+
+IMAGE GENERATION PROTOCOL:
+If a new character is introduced, a major life milestone occurs, a child is born, or a significant relational/hazard event takes place, emit an explicit image block at the very end of your response:
+\`\`\`image_prompt
+Character: [Character Name]
+Type: [NEW_CHARACTER | MILESTONE_UPDATE | MULTI_CHARACTER_SCENE | CHILD_GENETIC_BIRTH]
+Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure, age, expression, clothing, lighting, and environmental context. For children, explicitly blend parental visual traits.]
+\`\`\``;
 
     let state = {
       apiKey: localStorage.getItem('life_sim_api_key') || '',
       rules: localStorage.getItem('life_sim_rules') || DEFAULT_RULES,
       statusAnchor: localStorage.getItem('life_sim_anchor') || '',
-      logHistory: localStorage.getItem('life_sim_log') || ''
+      logHistory: localStorage.getItem('life_sim_log') || '',
+      lastImage: localStorage.getItem('life_sim_image') || '',
+      lastCaption: localStorage.getItem('life_sim_caption') || '',
+      dnaRoster: localStorage.getItem('life_sim_dna') || '{}'
     };
 
     if (state.logHistory) document.getElementById('log-container').innerText = state.logHistory;
+    if (state.lastImage) displayImage(state.lastImage, state.lastCaption);
     updateStatusCard(state.statusAnchor);
 
     function openSettings() {
       document.getElementById('api-key-input').value = state.apiKey;
       document.getElementById('rules-input').value = state.rules;
+      document.getElementById('roster-dna-input').value = state.dnaRoster;
       document.getElementById('modal').style.display = 'flex';
     }
 
@@ -100,19 +128,27 @@ Every response MUST output a clean \`\`\`yaml Status Anchor at the top containin
     function saveSettings() {
       state.apiKey = document.getElementById('api-key-input').value.trim();
       state.rules = document.getElementById('rules-input').value;
+      state.dnaRoster = document.getElementById('roster-dna-input').value;
       localStorage.setItem('life_sim_api_key', state.apiKey);
       localStorage.setItem('life_sim_rules', state.rules);
+      localStorage.setItem('life_sim_dna', state.dnaRoster);
       closeSettings();
     }
 
     function resetGame() {
-      if (confirm("Reset current game state?")) {
-        localStorage.removeItem('life_sim_anchor');
-        localStorage.removeItem('life_sim_log');
-        state.statusAnchor = '';
-        state.logHistory = '';
+      if (confirm("Reset game state and character memory?")) {
+        localStorage.clear();
         location.reload();
       }
+    }
+
+    function displayImage(base64Data, caption) {
+      const card = document.getElementById('visual-card');
+      const img = document.getElementById('visual-img');
+      const cap = document.getElementById('visual-caption');
+      img.src = `data:image/png;base64,${base64Data}`;
+      cap.innerText = caption || "Character Milestone Visual";
+      card.style.display = 'block';
     }
 
     function updateStatusCard(yamlText) {
@@ -127,6 +163,35 @@ Every response MUST output a clean \`\`\`yaml Status Anchor at the top containin
       document.getElementById('stat-mood').innerText = getVal('Mood');
     }
 
+    async function generateMilestoneImage(promptText, caption) {
+      const logEl = document.getElementById('log-container');
+      logEl.innerText += `\n\n[Generating character visual via Imagen 3...]`;
+      logEl.scrollTop = logEl.scrollHeight;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${state.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instances: [{ prompt: promptText }],
+            parameters: { sampleCount: 1, aspectRatio: "1:1" }
+          })
+        });
+
+        const data = await res.json();
+        if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+          const base64 = data.predictions[0].bytesBase64Encoded;
+          state.lastImage = base64;
+          state.lastCaption = caption;
+          localStorage.setItem('life_sim_image', base64);
+          localStorage.setItem('life_sim_caption', caption);
+          displayImage(base64, caption);
+        }
+      } catch (err) {
+        console.error("Image generation failed:", err);
+      }
+    }
+
     async function handleTurn() {
       const inputEl = document.getElementById('move-input');
       const action = inputEl.value.trim();
@@ -139,7 +204,7 @@ Every response MUST output a clean \`\`\`yaml Status Anchor at the top containin
       logEl.innerText += `\n\n> Action: ${action}\n\n[Processing turn via Gemini 3.8 Flash...]`;
       logEl.scrollTop = logEl.scrollHeight;
 
-      const promptPayload = `${state.rules}\n\nPREVIOUS STATUS ANCHOR:\n${state.statusAnchor}\n\nPLAYER ACTION:\n${action}`;
+      const promptPayload = `${state.rules}\n\nLOCKED IDENTITY ROSTER (VISUAL DNA):\n${state.dnaRoster}\n\nPREVIOUS STATUS ANCHOR:\n${state.statusAnchor}\n\nPLAYER ACTION:\n${action}`;
 
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.apiKey}`, {
@@ -161,7 +226,7 @@ Every response MUST output a clean \`\`\`yaml Status Anchor at the top containin
 
         const reply = data.candidates[0].content.parts[0].text;
         
-        // Extract YAML Anchor
+        // 1. Parse Status Anchor
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
@@ -169,9 +234,31 @@ Every response MUST output a clean \`\`\`yaml Status Anchor at the top containin
           updateStatusCard(state.statusAnchor);
         }
 
-        state.logHistory = reply;
-        localStorage.setItem('life_sim_log', reply);
-        logEl.innerText = reply;
+        // 2. Parse Image Generation Block
+        const imageMatch = reply.match(/```image_prompt([\s\S]*?)```/i);
+        let cleanTextOutput = reply;
+
+        if (imageMatch) {
+          cleanTextOutput = reply.replace(imageMatch[0], '').trim();
+          const block = imageMatch[1];
+          const charMatch = block.match(/Character:\s*(.*)/i);
+          const typeMatch = block.match(/Type:\s*(.*)/i);
+          const promptMatch = block.match(/Prompt:\s*([\s\S]*)/i);
+
+          if (promptMatch && promptMatch[1]) {
+            const charName = charMatch ? charMatch[1].trim() : 'Protagonist';
+            const sceneType = typeMatch ? typeMatch[1].trim() : 'Portrait';
+            const imgPrompt = promptMatch[1].trim();
+            const caption = `${charName} (${sceneType.replace(/_/g, ' ')})`;
+
+            // Fire Imagen 3 asynchronously
+            generateMilestoneImage(imgPrompt, caption);
+          }
+        }
+
+        state.logHistory = cleanTextOutput;
+        localStorage.setItem('life_sim_log', cleanTextOutput);
+        logEl.innerText = cleanTextOutput;
         inputEl.value = '';
 
       } catch (err) {
