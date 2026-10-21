@@ -329,4 +329,33 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
         const imageMatch = reply.match(/```image_prompt([\s\S]*?)```/i);
         let cleanTextOutput = reply;
 
-        if (imageMatch
+        if (imageMatch) {
+          cleanTextOutput = reply.replace(imageMatch[0], '').trim();
+          const block = imageMatch[1];
+          const charMatch = block.match(/Character:\s*(.*)/i);
+          const typeMatch = block.match(/Type:\s*(.*)/i);
+          const promptMatch = block.match(/Prompt:\s*([\s\S]*)/i);
+
+          if (promptMatch && promptMatch[1]) {
+            const charName = charMatch ? charMatch[1].trim() : 'Protagonist';
+            const sceneType = typeMatch ? typeMatch[1].trim() : 'Portrait';
+            const imgPrompt = promptMatch[1].trim();
+            callImagenAPI(imgPrompt, `${charName} (${sceneType.replace(/_/g, ' ')})`);
+          }
+        }
+
+        state.logHistory = cleanTextOutput;
+        localStorage.setItem('life_sim_log', cleanTextOutput);
+        logEl.innerText = cleanTextOutput;
+        inputEl.value = '';
+
+      } catch (err) {
+        logEl.innerText += `\n\nAPI Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
