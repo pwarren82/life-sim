@@ -15,7 +15,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; display: flex; flex-direction: column; height: 100vh; max-width: 700px; margin: auto; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
     h1 { font-size: 1.1rem; color: var(--accent); }
     button.icon-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     
@@ -23,17 +23,19 @@
     .stat-item { color: var(--muted); }
     .stat-val { color: var(--text); font-weight: bold; }
 
-    /* Visual Milestone Card */
+    /* Visual Card */
     #visual-card { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; }
-    #visual-card img { width: 100%; max-height: 260px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    #visual-img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
     #visual-caption { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+    #img-status { font-size: 0.8rem; color: #38bdf8; margin: 4px 0; display: none; }
     
     #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
     
-    #input-card { display: flex; gap: 8px; }
+    #input-card { display: flex; gap: 6px; }
     #move-input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px; font-size: 0.95rem; resize: none; height: 50px; }
-    #exec-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 16px; cursor: pointer; }
-    #exec-btn:disabled { opacity: 0.5; }
+    .action-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 14px; cursor: pointer; }
+    .cam-btn { background: #3b82f6; color: #fff; font-weight: bold; border: none; border-radius: 8px; padding: 0 10px; cursor: pointer; font-size: 0.9rem; }
+    button:disabled { opacity: 0.5; }
     
     #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
     .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
@@ -61,12 +63,14 @@
     <img id="visual-img" src="" alt="Milestone Portrait">
     <div id="visual-caption">Character Milestone Visual</div>
   </div>
+  <div id="img-status"></div>
 
   <div id="log-container">Welcome to Life Sim. Enter your character initialization details below, or configure your API key in Settings (⚙️).</div>
 
   <div id="input-card">
     <textarea id="move-input" placeholder="Type your action / move here..."></textarea>
-    <button id="exec-btn" onclick="handleTurn()">SEND</button>
+    <button class="cam-btn" title="Generate Milestone Visual for Current State" onclick="triggerManualImage()">📸 Visual</button>
+    <button class="action-btn" id="exec-btn" onclick="handleTurn()">SEND</button>
   </div>
 
   <div id="modal">
@@ -90,16 +94,16 @@
 
   <script>
     const DEFAULT_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
-Hard-Locked Realism Life Simulator. Strict 1st-person POV. 
-Enforce strict 6.75/10 difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), and multi-turn chronic fallout.
+Protocol: Hard-Locked Realism Life Simulator. Strict 1st-person POV ("I/Me/My").
+Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), step-by-step arithmetic reconciliation, and multi-turn chronic fallout.
 Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.
 
-IMAGE GENERATION PROTOCOL:
-If a new character is introduced, a major life milestone occurs, a child is born, or a significant relational/hazard event takes place, emit an explicit image block at the very end of your response:
+MANDATORY VISUAL PROTOCOL:
+At the very end of your response, after the turn footer, you MUST output an image directive formatted exactly as:
 \`\`\`image_prompt
 Character: [Character Name]
-Type: [NEW_CHARACTER | MILESTONE_UPDATE | MULTI_CHARACTER_SCENE | CHILD_GENETIC_BIRTH]
-Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure, age, expression, clothing, lighting, and environmental context. For children, explicitly blend parental visual traits.]
+Type: [NEW_CHARACTER | MILESTONE_UPDATE | MULTI_CHARACTER_SCENE]
+Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facial structure, age, expression, clothing, lighting, and environmental context]
 \`\`\``;
 
     let state = {
@@ -109,7 +113,7 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
       logHistory: localStorage.getItem('life_sim_log') || '',
       lastImage: localStorage.getItem('life_sim_image') || '',
       lastCaption: localStorage.getItem('life_sim_caption') || '',
-      dnaRoster: localStorage.getItem('life_sim_dna') || '{}'
+      dnaRoster: localStorage.getItem('life_sim_dna') || ''
     };
 
     if (state.logHistory) document.getElementById('log-container').innerText = state.logHistory;
@@ -136,7 +140,7 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
     }
 
     function resetGame() {
-      if (confirm("Reset game state and character memory?")) {
+      if (confirm("Reset game state and memory?")) {
         localStorage.clear();
         location.reload();
       }
@@ -147,8 +151,16 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
       const img = document.getElementById('visual-img');
       const cap = document.getElementById('visual-caption');
       img.src = `data:image/png;base64,${base64Data}`;
-      cap.innerText = caption || "Character Milestone Visual";
+      cap.innerText = caption || "Character Visual";
       card.style.display = 'block';
+    }
+
+    function setImgStatus(msg, isError = false) {
+      const el = document.getElementById('img-status');
+      if (!msg) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.style.color = isError ? '#f87171' : '#38bdf8';
+      el.innerText = msg;
     }
 
     function updateStatusCard(yamlText) {
@@ -163,15 +175,17 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
       document.getElementById('stat-mood').innerText = getVal('Mood');
     }
 
-    async function generateMilestoneImage(promptText, caption) {
-      const logEl = document.getElementById('log-container');
-      logEl.innerText += `\n\n[Generating character visual via Imagen 3...]`;
-      logEl.scrollTop = logEl.scrollHeight;
+    async function callImagenAPI(promptText, caption) {
+      setImgStatus("Rendering character visual via Imagen 3...");
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${state.apiKey}`;
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${state.apiKey}`, {
+        const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': state.apiKey
+          },
           body: JSON.stringify({
             instances: [{ prompt: promptText }],
             parameters: { sampleCount: 1, aspectRatio: "1:1" }
@@ -179,6 +193,8 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
         });
 
         const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
         if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
           const base64 = data.predictions[0].bytesBase64Encoded;
           state.lastImage = base64;
@@ -186,10 +202,24 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
           localStorage.setItem('life_sim_image', base64);
           localStorage.setItem('life_sim_caption', caption);
           displayImage(base64, caption);
+          setImgStatus("");
+        } else {
+          throw new Error("No image data returned from API.");
         }
       } catch (err) {
-        console.error("Image generation failed:", err);
+        setImgStatus(`Image API Notice: ${err.message}`, true);
       }
+    }
+
+    // Manual on-demand visual button trigger
+    async function triggerManualImage() {
+      if (!state.apiKey) { alert('Please enter your Google AI Studio API key in Settings.'); openSettings(); return; }
+      if (!state.statusAnchor && !state.logHistory) { alert('Initialize your character first.'); return; }
+      
+      const pName = document.getElementById('stat-name').innerText;
+      const pAge = document.getElementById('stat-age').innerText;
+      const manualPrompt = `Cinematic photorealistic portrait of ${pName}, age ${pAge}. Realistic skin texture, natural lighting, expressive eyes, setting reflecting recent life events. 8k resolution.`;
+      await callImagenAPI(manualPrompt, `${pName} (Age ${pAge})`);
     }
 
     async function handleTurn() {
@@ -209,7 +239,10 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.apiKey}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': state.apiKey
+          },
           body: JSON.stringify({
             contents: [{ parts: [{ text: promptPayload }] }],
             safetySettings: [
@@ -226,7 +259,7 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
 
         const reply = data.candidates[0].content.parts[0].text;
         
-        // 1. Parse Status Anchor
+        // Extract YAML Anchor
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
@@ -234,7 +267,7 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
           updateStatusCard(state.statusAnchor);
         }
 
-        // 2. Parse Image Generation Block
+        // Parse Image Prompt Block
         const imageMatch = reply.match(/```image_prompt([\s\S]*?)```/i);
         let cleanTextOutput = reply;
 
@@ -249,10 +282,7 @@ Prompt: [Cinematic 8k photorealistic portrait prompt detailing facial structure,
             const charName = charMatch ? charMatch[1].trim() : 'Protagonist';
             const sceneType = typeMatch ? typeMatch[1].trim() : 'Portrait';
             const imgPrompt = promptMatch[1].trim();
-            const caption = `${charName} (${sceneType.replace(/_/g, ' ')})`;
-
-            // Fire Imagen 3 asynchronously
-            generateMilestoneImage(imgPrompt, caption);
+            callImagenAPI(imgPrompt, `${charName} (${sceneType.replace(/_/g, ' ')})`);
           }
         }
 
