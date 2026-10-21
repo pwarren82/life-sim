@@ -8,6 +8,7 @@
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
+      --yaml-bg: #0b1120;
       --accent: #10b981;
       --text: #f8fafc;
       --muted: #94a3b8;
@@ -19,24 +20,33 @@
     h1 { font-size: 1.1rem; color: var(--accent); }
     button.icon-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
     
+    /* Top Quick-Status Bar */
     #status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; margin-bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .stat-item { color: var(--muted); }
     .stat-val { color: var(--text); font-weight: bold; }
 
-    /* Visual Card */
+    /* Visual Portrait Card */
     #visual-card { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; }
-    #visual-img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    #visual-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
     #visual-caption { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
     #img-status { font-size: 0.8rem; color: #38bdf8; margin: 4px 0; display: none; }
     
-    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
+    /* Middle Narrative Log Box */
+    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; min-height: 180px; }
     
+    /* Dedicated YAML Box Below Middle Box */
+    #yaml-box-wrapper { display: flex; flex-direction: column; margin-bottom: 8px; }
+    .yaml-header { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 3px; padding-left: 2px; }
+    #yaml-container { background: var(--yaml-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; height: 135px; overflow-y: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; line-height: 1.4; color: #38bdf8; white-space: pre-wrap; }
+
+    /* Bottom Action Input Box */
     #input-card { display: flex; gap: 6px; }
     #move-input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px; font-size: 0.95rem; resize: none; height: 50px; }
     .action-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 14px; cursor: pointer; }
     .cam-btn { background: #3b82f6; color: #fff; font-weight: bold; border: none; border-radius: 8px; padding: 0 10px; cursor: pointer; font-size: 0.9rem; }
     button:disabled { opacity: 0.5; }
     
+    /* Settings Modal */
     #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
     .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
     .modal-content textarea, .modal-content input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; margin: 8px 0; }
@@ -66,6 +76,11 @@
   <div id="img-status"></div>
 
   <div id="log-container"></div>
+
+  <div id="yaml-box-wrapper">
+    <div class="yaml-header">Active YAML Status Anchor</div>
+    <div id="yaml-container">No active YAML state yet. Complete Phase 1 initialization above to generate Turn 1 parameters.</div>
+  </div>
 
   <div id="input-card">
     <textarea id="move-input" placeholder="Type your action / move here..."></textarea>
@@ -143,6 +158,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
     document.getElementById('log-container').innerText = state.logHistory;
     if (state.lastImage) displayImage(state.lastImage, state.lastCaption);
     updateStatusCard(state.statusAnchor);
+    updateYamlBox(state.statusAnchor);
 
     if (!state.statusAnchor) {
       document.getElementById('move-input').value = `Initialize Character:\n1. Name: \n2. Date: \n3. Age: \n4. Demographics: \n5. Class: \n6. Creed: \n7. Health: \n8. Sex Ed: \n9. Traits/Flaws: \n10. Vices: \n11. Style: \n12. Career/Skills: \n13. Aspiration: \n14. Hobbies: \n15. Location/Finances: \n16. Starting Network: `;
@@ -211,6 +227,13 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
       document.getElementById('stat-age').innerText = getVal('Age');
       document.getElementById('stat-fin').innerText = getVal('Fin') || getVal('Cash');
       document.getElementById('stat-mood').innerText = getVal('Mood');
+    }
+
+    function updateYamlBox(yamlText) {
+      const yamlEl = document.getElementById('yaml-container');
+      if (!yamlText) return;
+      const cleanedYaml = yamlText.replace(/```yaml/gi, '').replace(/```/g, '').trim();
+      yamlEl.innerText = cleanedYaml;
     }
 
     async function callImagenAPI(promptText, caption) {
@@ -318,19 +341,22 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
         if (data.error) throw new Error(data.error.message);
 
         const reply = data.candidates[0].content.parts[0].text;
+        let cleanTextOutput = reply;
         
+        // Extract YAML Block, update YAML box, and strip it from the narrative box
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
           localStorage.setItem('life_sim_anchor', state.statusAnchor);
           updateStatusCard(state.statusAnchor);
+          updateYamlBox(state.statusAnchor);
+          cleanTextOutput = cleanTextOutput.replace(yamlMatch[0], '').trim();
         }
 
-        const imageMatch = reply.match(/```image_prompt([\s\S]*?)```/i);
-        let cleanTextOutput = reply;
-
+        // Extract Image Prompt Block and strip it from the narrative box
+        const imageMatch = cleanTextOutput.match(/```image_prompt([\s\S]*?)```/i);
         if (imageMatch) {
-          cleanTextOutput = reply.replace(imageMatch[0], '').trim();
+          cleanTextOutput = cleanTextOutput.replace(imageMatch[0], '').trim();
           const block = imageMatch[1];
           const charMatch = block.match(/Character:\s*(.*)/i);
           const typeMatch = block.match(/Type:\s*(.*)/i);
@@ -347,13 +373,13 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
         state.logHistory = cleanTextOutput;
         localStorage.setItem('life_sim_log', cleanTextOutput);
         logEl.innerText = cleanTextOutput;
+        logEl.scrollTop = 0;
         inputEl.value = '';
 
       } catch (err) {
         logEl.innerText += `\n\nAPI Error: ${err.message}`;
       } finally {
         btn.disabled = false;
-        logEl.scrollTop = logEl.scrollHeight;
       }
     }
   </script>
