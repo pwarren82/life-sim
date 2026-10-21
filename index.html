@@ -1,35 +1,88 @@
-async function callImagenAPI(promptText, caption) {
-      setImgStatus("Rendering character visual via Imagen 4...");
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${state.apiKey}`;
+const DEFAULT_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
+Protocol: Hard-Locked Realism Life Simulator. Strict 1st-person POV ("I/Me/My").
+Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), step-by-step arithmetic reconciliation, and multi-turn chronic fallout.
+Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.
 
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': state.apiKey
-          },
-          body: JSON.stringify({
-            instances: [{ prompt: promptText }],
-            parameters: { sampleCount: 1, aspectRatio: "1:1" }
-          })
-        });
+MANDATORY VISUAL PROTOCOL:
+At the very end of your response, after the turn footer, you MUST output an image directive formatted exactly as:
+\`\`\`image_prompt
+Character: [Character Name]
+Type: [NEW_CHARACTER | MILESTONE_UPDATE | MULTI_CHARACTER_SCENE]
+Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facial structure, age, expression, clothing, lighting, and environmental context]
+\`\`\``;
 
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+    let state = {
+      apiKey: localStorage.getItem('life_sim_api_key') || '',
+      rules: localStorage.getItem('life_sim_rules') || DEFAULT_RULES,
+      statusAnchor: localStorage.getItem('life_sim_anchor') || '',
+      logHistory: localStorage.getItem('life_sim_log') || '',
+      lastImage: localStorage.getItem('life_sim_image') || '',
+      lastCaption: localStorage.getItem('life_sim_caption') || '',
+      dnaRoster: localStorage.getItem('life_sim_dna') || ''
+    };
 
-        if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-          const base64 = data.predictions[0].bytesBase64Encoded;
-          state.lastImage = base64;
-          state.lastCaption = caption;
-          localStorage.setItem('life_sim_image', base64);
-          localStorage.setItem('life_sim_caption', caption);
-          displayImage(base64, caption);
-          setImgStatus("");
-        } else {
-          throw new Error("No image data returned from API.");
-        }
-      } catch (err) {
-        setImgStatus(`Image API Notice: ${err.message}`, true);
+    if (state.logHistory) document.getElementById('log-container').innerText = state.logHistory;
+    if (state.lastImage) displayImage(state.lastImage, state.lastCaption);
+    updateStatusCard(state.statusAnchor);
+
+    function openSettings() {
+      document.getElementById('api-key-input').value = state.apiKey;
+      document.getElementById('rules-input').value = state.rules;
+      document.getElementById('roster-dna-input').value = state.dnaRoster;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeSettings() { 
+      document.getElementById('modal').style.display = 'none'; 
+    }
+
+    function saveSettings() {
+      state.apiKey = document.getElementById('api-key-input').value.trim();
+      state.rules = document.getElementById('rules-input').value;
+      state.dnaRoster = document.getElementById('roster-dna-input').value;
+      localStorage.setItem('life_sim_api_key', state.apiKey);
+      localStorage.setItem('life_sim_rules', state.rules);
+      localStorage.setItem('life_sim_dna', state.dnaRoster);
+      closeSettings();
+    }
+
+    function resetGame() {
+      if (confirm("Reset game state and memory?")) {
+        localStorage.clear();
+        location.reload();
       }
     }
+
+    function displayImage(base64Data, caption) {
+      const card = document.getElementById('visual-card');
+      const img = document.getElementById('visual-img');
+      const cap = document.getElementById('visual-caption');
+      img.src = `data:image/png;base64,${base64Data}`;
+      cap.innerText = caption || "Character Visual";
+      card.style.display = 'block';
+    }
+
+    function setImgStatus(msg, isError = false) {
+      const el = document.getElementById('img-status');
+      if (!msg) { 
+        el.style.display = 'none'; 
+        return; 
+      }
+      el.style.display = 'block';
+      el.style.color = isError ? '#f87171' : '#38bdf8';
+      el.innerText = msg;
+    }
+
+    function updateStatusCard(yamlText) {
+      if (!yamlText) return;
+      const getVal = (key) => {
+        const m = yamlText.match(new RegExp(`${key}:\\s*(.+)`, 'i'));
+        return m ? m[1].replace(/['"]/g, '').trim() : '--';
+      };
+      document.getElementById('stat-name').innerText = getVal('Protagonist_Name');
+      document.getElementById('stat-age').innerText = getVal('Age');
+      document.getElementById('stat-fin').innerText = getVal('Fin') || getVal('Cash');
+      document.getElementById('stat-mood').innerText = getVal('Mood');
+    }
+
+    async function callImagen
