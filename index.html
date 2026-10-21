@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Life Sim: Hard-Locked Edition</title>
+  <title>Life Sim: Alpha 9.4 Hard-Locked Edition</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -55,7 +55,7 @@
 <body>
 
   <header>
-    <h1>LIFE SIMULATOR</h1>
+    <h1>LIFE SIMULATOR (Alpha 9.4)</h1>
     <div>
       <button class="icon-btn" onclick="openSettings()">⚙️ Settings</button>
       <button class="icon-btn" onclick="resetGame()">🔄 Reset</button>
@@ -78,7 +78,7 @@
   <div id="log-container"></div>
 
   <div id="yaml-box-wrapper">
-    <div class="yaml-header">Active YAML Status Anchor</div>
+    <div class="yaml-header">Active YAML Status Anchor & Dual-Roster Topology</div>
     <div id="yaml-container">No active YAML state yet. Complete Phase 1 initialization above to generate Turn 1 parameters.</div>
   </div>
 
@@ -90,11 +90,11 @@
 
   <div id="modal">
     <div class="modal-content">
-      <h3>Settings & Rules</h3>
+      <h3>Settings & Rules (Alpha 9.4)</h3>
       <label>Google AI Studio API Key:</label>
       <input type="password" id="api-key-input" placeholder="Paste AI Studio Key">
       
-      <label>Master Rules & Prompt:</label>
+      <label>Master Rules & Prompt (Alpha 9.4):</label>
       <textarea id="rules-input" rows="8"></textarea>
       
       <label>Active Identity Lock Roster (Visual DNA):</label>
@@ -114,28 +114,30 @@
 Please fill out and submit the starting questionnaire below:
 
 1. Full Name & Aliases:
-2. Starting Date & Historical Setting (e.g., October 1940 or June 1985):
-3. Age & Birth Month (Format: XX Yrs YY Mos, e.g., 24 Yrs 03 Mos):
+2. Starting Date & Historical/Chronological Setting (Month & Year, e.g., October 1940 or June 2004):
+3. Age & Birth Month (Exact starting age in XX Yrs YY Mos format, e.g., 24 Yrs 03 Mos):
 4. Demographics, Gender, Heritage, Race, & Sexual Orientation:
 5. Socioeconomic Background, Class Origin, & Family Safety Net Tier (Tier 1 Subsistence to Tier 5 Elite Capitalist):
-6. Creed, Faith, Cultural Traditions, Intergenerational Obligations & Dietary Baseline:
+6. Creed, Faith, Cultural Traditions, Intergenerational Obligations & Dietary/Observance Baseline:
 7. Health Baseline, Physical Traits, Known Medical Conditions, or Active Disabilities:
-8. Sex Education Tier (Tier 0 to Tier 3), Reproductive Health Baseline & Contraceptive Preferences:
-9. Personality Profile, Strengths, Major Flaws, & Core Psychological Triggers/Fears:
+8. Sex Education Tier (Tier 0 Uninformed to Tier 3 Expert), Reproductive Health Baseline, Contraceptive Preferences & Sexual Desires/Inclinations:
+9. Personality Profile, Strengths, Major Flaws, & Core Psychological Triggers/Fears (Primary sources of anxiety or panic):
 10. Psychological Tier, Vice Vectors, & Coping Outlets:
 11. Appearance, Fashion, Style & Sensory Markers:
 12. Core Domain Expertise, Aptitudes & Industry/Career Path:
-13. Lifetime Aspiration Path, Primary Goal Vectors, & Pyrrhic Wants:
+13. Lifetime Aspiration Path, Primary Goal Vectors, & Pyrrhic Wants (Vices/flaws that grant points but cause friction):
 14. Passions, Hobbies, Lifelong Instruments/Talents & Primary Recovery Outlets:
 15. Location, Housing, Regional Context & Initial Financial Assets:
-16. Starting Network Roster & Immutable Backstory Anchors (Key family, close friends, or rivals):
+16. Starting Lineage, Kinship & Network Anchors (List known direct family, lateral kin, lifelong NPC talents/traits, military service records, defined historical milestones, close friends, or workplace rivals):
 =====================================================
 Type your responses below and click SEND to initiate Phase 1.5 & Turn 1.`;
 
-    const DEFAULT_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
-Protocol: Hard-Locked Realism Life Simulator. Strict 1st-person POV ("I/Me/My").
-Enforce strict difficulty (6.75/10 to 7.5/10), zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly modulo aging (+1 Mo/turn), step-by-step arithmetic reconciliation, and multi-turn chronic fallout.
-Every response MUST output a clean \`\`\`yaml Status Anchor at the top containing Protagonist_Name, Date, Age, Fin (Cash/Debt/Net), Mood, Rel_Tension, and Network_Roster, followed by the itemized Life Log.
+    const ALPHA_94_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
+Protocol: Master Prompt Alpha 9.4 (Hard-Locked Realism, Math Verification, Unfiltered Visceral Intimacy, Persistent Trait, Mandatory Friction, Liminal Romance, Historical Inflation, Anti-Cozy Turn Drift, Sociological Realism, Monthly Age, Class/Heritage Trajectory, Somatic Health, Reproductive Risks, Comprehensive Initialization, Immutable Lifetime Lore, 1,000+ Turn Butterfly Engine, Dual-Roster Dynasty & Network Topology, Telemetric Pre-Flight & Active Rule Enforcement)
+Difficulty Level: 7.5/10 (Steadfast Realism; Dynamic Status-Scaled Friction)
+Perspective: Strict 1ST-PERSON POINT OF VIEW ("I/Me/My")
+
+Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly aging (+1 Mo/turn; XX Yrs YY Mos format), step-by-step arithmetic reconciliation, unfiltered visceral intimacy (zero fade-to-black), dual-roster topology (DYNASTY_ROSTER and NETWORK_ROSTER), and 29-step pre-flight telemetry audits in <pre_flight_eval>.
 
 MANDATORY VISUAL PROTOCOL:
 At the very end of your response, after the turn footer, you MUST output an image directive formatted exactly as:
@@ -147,7 +149,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
 
     let state = {
       apiKey: localStorage.getItem('life_sim_api_key') || '',
-      rules: localStorage.getItem('life_sim_rules') || DEFAULT_RULES,
+      rules: localStorage.getItem('life_sim_rules') || ALPHA_94_RULES,
       statusAnchor: localStorage.getItem('life_sim_anchor') || '',
       logHistory: localStorage.getItem('life_sim_log') || PHASE_1_QUESTIONNAIRE,
       lastImage: localStorage.getItem('life_sim_image') || '',
@@ -161,7 +163,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
     updateYamlBox(state.statusAnchor);
 
     if (!state.statusAnchor) {
-      document.getElementById('move-input').value = `Initialize Character:\n1. Name: \n2. Date: \n3. Age: \n4. Demographics: \n5. Class: \n6. Creed: \n7. Health: \n8. Sex Ed: \n9. Traits/Flaws: \n10. Vices: \n11. Style: \n12. Career/Skills: \n13. Aspiration: \n14. Hobbies: \n15. Location/Finances: \n16. Starting Network: `;
+      document.getElementById('move-input').value = `Initialize Character:\n1. Full Name: \n2. Starting Date: \n3. Age (XX Yrs YY Mos): \n4. Demographics: \n5. Class Tier: \n6. Creed/Traditions: \n7. Health Baseline: \n8. Sex Ed & Contraception: \n9. Traits/Flaws: \n10. Psychological Tier: \n11. Style & Markers: \n12. Career/Aptitudes: \n13. Aspiration Path: \n14. Hobbies/Passions: \n15. Location & Assets: \n16. Starting Lineage & Network: `;
     }
 
     function openSettings() {
@@ -223,9 +225,9 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
         const m = yamlText.match(new RegExp(`${key}:\\s*(.+)`, 'i'));
         return m ? m[1].replace(/['"]/g, '').trim() : '--';
       };
-      document.getElementById('stat-name').innerText = getVal('Protagonist_Name');
+      document.getElementById('stat-name').innerText = getVal('Name');
       document.getElementById('stat-age').innerText = getVal('Age');
-      document.getElementById('stat-fin').innerText = getVal('Fin') || getVal('Cash');
+      document.getElementById('stat-fin').innerText = getVal('Cash') || getVal('Net');
       document.getElementById('stat-mood').innerText = getVal('Mood');
     }
 
@@ -314,7 +316,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
       const logEl = document.getElementById('log-container');
       const btn = document.getElementById('exec-btn');
       btn.disabled = true;
-      logEl.innerText += `\n\n> Action: ${action}\n\n[Processing turn via Gemini 3.8 Flash...]`;
+      logEl.innerText += `\n\n> Action: ${action}\n\n[Processing Alpha 9.4 29-step telemetry audit & turn execution...]`;
       logEl.scrollTop = logEl.scrollHeight;
 
       const promptPayload = `${state.rules}\n\nLOCKED IDENTITY ROSTER (VISUAL DNA):\n${state.dnaRoster}\n\nPREVIOUS STATUS ANCHOR:\n${state.statusAnchor}\n\nPLAYER ACTION:\n${action}`;
@@ -343,7 +345,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
         const reply = data.candidates[0].content.parts[0].text;
         let cleanTextOutput = reply;
         
-        // Extract YAML Block, update YAML box, and strip it from the narrative box
+        // Extract YAML Status Anchor
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
@@ -353,7 +355,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
           cleanTextOutput = cleanTextOutput.replace(yamlMatch[0], '').trim();
         }
 
-        // Extract Image Prompt Block and strip it from the narrative box
+        // Extract Image Prompt Block
         const imageMatch = cleanTextOutput.match(/```image_prompt([\s\S]*?)```/i);
         if (imageMatch) {
           cleanTextOutput = cleanTextOutput.replace(imageMatch[0], '').trim();
