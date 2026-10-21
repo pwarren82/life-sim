@@ -1,4 +1,99 @@
-const PHASE_1_QUESTIONNAIRE = `=====================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Life Sim: Hard-Locked Edition</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; display: flex; flex-direction: column; height: 100vh; max-width: 700px; margin: auto; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    h1 { font-size: 1.1rem; color: var(--accent); }
+    button.icon-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+    
+    #status-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; margin-bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .stat-item { color: var(--muted); }
+    .stat-val { color: var(--text); font-weight: bold; }
+
+    /* Visual Card */
+    #visual-card { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; text-align: center; }
+    #visual-img { width: 100%; max-height: 280px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+    #visual-caption { font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+    #img-status { font-size: 0.8rem; color: #38bdf8; margin: 4px 0; display: none; }
+    
+    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
+    
+    #input-card { display: flex; gap: 6px; }
+    #move-input { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px; font-size: 0.95rem; resize: none; height: 50px; }
+    .action-btn { background: var(--accent); color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 14px; cursor: pointer; }
+    .cam-btn { background: #3b82f6; color: #fff; font-weight: bold; border: none; border-radius: 8px; padding: 0 10px; cursor: pointer; font-size: 0.9rem; }
+    button:disabled { opacity: 0.5; }
+    
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); padding: 16px; align-items: center; justify-content: center; z-index: 100; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-content textarea, .modal-content input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 6px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>LIFE SIMULATOR</h1>
+    <div>
+      <button class="icon-btn" onclick="openSettings()">⚙️ Settings</button>
+      <button class="icon-btn" onclick="resetGame()">🔄 Reset</button>
+    </div>
+  </header>
+
+  <div id="status-card">
+    <div class="stat-item">Protagonist: <span id="stat-name" class="stat-val">Uninitialized</span></div>
+    <div class="stat-item">Age: <span id="stat-age" class="stat-val">--</span></div>
+    <div class="stat-item">Cash / Net: <span id="stat-fin" class="stat-val">--</span></div>
+    <div class="stat-item">Mood / Energy: <span id="stat-mood" class="stat-val">--</span></div>
+  </div>
+
+  <div id="visual-card">
+    <img id="visual-img" src="" alt="Milestone Portrait">
+    <div id="visual-caption">Character Milestone Visual</div>
+  </div>
+  <div id="img-status"></div>
+
+  <div id="log-container"></div>
+
+  <div id="input-card">
+    <textarea id="move-input" placeholder="Type your action / move here..."></textarea>
+    <button class="cam-btn" title="Generate Milestone Visual for Current State" onclick="triggerManualImage()">📸 Visual</button>
+    <button class="action-btn" id="exec-btn" onclick="handleTurn()">SEND</button>
+  </div>
+
+  <div id="modal">
+    <div class="modal-content">
+      <h3>Settings & Rules</h3>
+      <label>Google AI Studio API Key:</label>
+      <input type="password" id="api-key-input" placeholder="Paste AI Studio Key">
+      
+      <label>Master Rules & Prompt:</label>
+      <textarea id="rules-input" rows="8"></textarea>
+      
+      <label>Active Identity Lock Roster (Visual DNA):</label>
+      <textarea id="roster-dna-input" rows="4" placeholder="Character Visual DNA stored here..."></textarea>
+
+      <div style="display:flex; justify-content:space-between; margin-top:8px;">
+        <button class="icon-btn" onclick="closeSettings()">Cancel</button>
+        <button class="icon-btn" style="background:var(--accent); color:#000;" onclick="saveSettings()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PHASE_1_QUESTIONNAIRE = `=====================================================
          PHASE 1: CHARACTER INITIALIZATION PROTOCOL
 =====================================================
 Please fill out and submit the starting questionnaire below:
@@ -45,12 +140,10 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
       dnaRoster: localStorage.getItem('life_sim_dna') || ''
     };
 
-    // Render initial view
     document.getElementById('log-container').innerText = state.logHistory;
     if (state.lastImage) displayImage(state.lastImage, state.lastCaption);
     updateStatusCard(state.statusAnchor);
 
-    // Populate initial questionnaire template if game is brand new
     if (!state.statusAnchor) {
       document.getElementById('move-input').value = `Initialize Character:\n1. Name: \n2. Date: \n3. Age: \n4. Demographics: \n5. Class: \n6. Creed: \n7. Health: \n8. Sex Ed: \n9. Traits/Flaws: \n10. Vices: \n11. Style: \n12. Career/Skills: \n13. Aspiration: \n14. Hobbies: \n15. Location/Finances: \n16. Starting Network: `;
     }
@@ -226,7 +319,6 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
 
         const reply = data.candidates[0].content.parts[0].text;
         
-        // Extract YAML Status Anchor
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
@@ -234,34 +326,7 @@ Prompt: [High-fidelity cinematic photorealistic portrait prompt describing facia
           updateStatusCard(state.statusAnchor);
         }
 
-        // Parse Image Prompt Block
         const imageMatch = reply.match(/```image_prompt([\s\S]*?)```/i);
         let cleanTextOutput = reply;
 
-        if (imageMatch) {
-          cleanTextOutput = reply.replace(imageMatch[0], '').trim();
-          const block = imageMatch[1];
-          const charMatch = block.match(/Character:\s*(.*)/i);
-          const typeMatch = block.match(/Type:\s*(.*)/i);
-          const promptMatch = block.match(/Prompt:\s*([\s\S]*)/i);
-
-          if (promptMatch && promptMatch[1]) {
-            const charName = charMatch ? charMatch[1].trim() : 'Protagonist';
-            const sceneType = typeMatch ? typeMatch[1].trim() : 'Portrait';
-            const imgPrompt = promptMatch[1].trim();
-            callImagenAPI(imgPrompt, `${charName} (${sceneType.replace(/_/g, ' ')})`);
-          }
-        }
-
-        state.logHistory = cleanTextOutput;
-        localStorage.setItem('life_sim_log', cleanTextOutput);
-        logEl.innerText = cleanTextOutput;
-        inputEl.value = '';
-
-      } catch (err) {
-        logEl.innerText += `\n\nAPI Error: ${err.message}`;
-      } finally {
-        btn.disabled = false;
-        logEl.scrollTop = logEl.scrollHeight;
-      }
-    }
+        if (imageMatch
