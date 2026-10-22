@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Life Sim: Alpha 9.4 Hard-Locked Edition</title>
+  <title>Life Sim: Alpha 10.0 Hardcore Edition</title>
   <style>
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
-      --yaml-bg: #0b1120;
       --accent: #10b981;
       --text: #f8fafc;
       --muted: #94a3b8;
@@ -25,13 +24,8 @@
     .stat-item { color: var(--muted); }
     .stat-val { color: var(--text); font-weight: bold; }
     
-    /* Middle Narrative Log Box */
-    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; min-height: 220px; }
-    
-    /* Dedicated YAML Box Below Middle Box */
-    #yaml-box-wrapper { display: flex; flex-direction: column; margin-bottom: 8px; }
-    .yaml-header { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 3px; padding-left: 2px; }
-    #yaml-container { background: var(--yaml-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; height: 150px; overflow-y: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.8rem; line-height: 1.4; color: #38bdf8; white-space: pre-wrap; }
+    /* Unified Narrative & YAML Log Box */
+    #log-container { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 8px; }
 
     /* Bottom Action Input Box */
     #input-card { display: flex; gap: 6px; }
@@ -48,7 +42,7 @@
 <body>
 
   <header>
-    <h1>LIFE SIMULATOR (Alpha 9.4)</h1>
+    <h1>LIFE SIMULATOR (Alpha 10.0)</h1>
     <div>
       <button class="icon-btn" onclick="openSettings()">⚙️ Settings</button>
       <button class="icon-btn" onclick="resetGame()">🔄 Reset</button>
@@ -64,11 +58,6 @@
 
   <div id="log-container"></div>
 
-  <div id="yaml-box-wrapper">
-    <div class="yaml-header">Active YAML Status Anchor & Dual-Roster Topology</div>
-    <div id="yaml-container">No active YAML state yet. Complete Phase 1 initialization above to generate Turn 1 parameters.</div>
-  </div>
-
   <div id="input-card">
     <textarea id="move-input" placeholder="Type your action / move here..."></textarea>
     <button class="action-btn" id="exec-btn" onclick="handleTurn()">SEND</button>
@@ -76,11 +65,11 @@
 
   <div id="modal">
     <div class="modal-content">
-      <h3>Settings & Rules (Alpha 9.4)</h3>
+      <h3>Settings & Rules (Alpha 10.0)</h3>
       <label>Google AI Studio API Key:</label>
       <input type="password" id="api-key-input" placeholder="Paste AI Studio Key">
       
-      <label>Master Rules & Prompt (Alpha 9.4):</label>
+      <label>Master Rules & Prompt (Alpha 10.0):</label>
       <textarea id="rules-input" rows="8"></textarea>
 
       <div style="display:flex; justify-content:space-between; margin-top:8px;">
@@ -97,7 +86,7 @@
 Please fill out and submit the starting questionnaire below:
 
 1. Full Name & Aliases:
-2. Starting Date & Historical/Chronological Setting (Month & Year, e.g., October 1940 or June 2004):
+2. Starting Date & Historical Setting (Month & Year, e.g., October 1940 or June 2004):
 3. Age & Birth Month (Exact starting age in XX Yrs YY Mos format, e.g., 24 Yrs 03 Mos):
 4. Demographics, Gender, Heritage, Race, & Sexual Orientation:
 5. Socioeconomic Background, Class Origin, & Family Safety Net Tier (Tier 1 Subsistence to Tier 5 Elite Capitalist):
@@ -115,23 +104,48 @@ Please fill out and submit the starting questionnaire below:
 =====================================================
 Type your responses below and click SEND to initiate Phase 1.5 & Turn 1.`;
 
-    const ALPHA_94_RULES = `SYSTEM IDENTITY & OPERATIONAL BASELINE:
-Protocol: Master Prompt Alpha 9.4 (Hard-Locked Realism, Math Verification, Unfiltered Visceral Intimacy, Persistent Trait, Mandatory Friction, Liminal Romance, Historical Inflation, Anti-Cozy Turn Drift, Sociological Realism, Monthly Age, Class/Heritage Trajectory, Somatic Health, Reproductive Risks, Comprehensive Initialization, Immutable Lifetime Lore, 1,000+ Turn Butterfly Engine, Dual-Roster Dynasty & Network Topology, Telemetric Pre-Flight & Active Rule Enforcement)
-Difficulty Level: 7.5/10 (Steadfast Realism; Dynamic Status-Scaled Friction)
-Perspective: Strict 1ST-PERSON POINT OF VIEW ("I/Me/My")
+    const ALPHA_10_RULES = `SYSTEM IDENTITY: Master Prompt Alpha 10.0 (Hardcore Life & Dynasty Simulation Engine)
+DIFFICULTY: 7.5/10 (Steadfast Realism, Active Friction, Zero Cozy Bias)
+PERSPECTIVE: Strict 1ST-PERSON ("I/Me/My")
+TIME: 1 Turn = Exactly 1 Calendar Month (Increment: XX Yrs YY Mos)
 
-Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lane attempts, monotonic monthly aging (+1 Mo/turn; XX Yrs YY Mos format), step-by-step arithmetic reconciliation, unfiltered visceral intimacy (zero fade-to-black), dual-roster topology (DYNASTY_ROSTER and NETWORK_ROSTER), and 29-step pre-flight telemetry audits in <pre_flight_eval>.`;
+---
+
+### SECTION 1: CORE ENGINE DIRECTIVES (NON-NEGOTIABLE)
+1. ANTI-COZINESS & SYSTEMIC RESISTANCE: Default LLM helpfulness is BANNED. Every turn MUST inflict friction, trade-offs, or collateral costs. No action resolves 100% cleanly. (Exception: 5% Coziness RNG roll).
+2. UNFILTERED REALISM & INTIMACY: Zero fade-to-black. Adult intimacy requires Tri-Vector Visceral Immersion (Somatics, Mechanics, Interiority). Render physical hazards, somatic health, and toxic human relations with cold, clinical, or visceral precision.
+3. FAIL-CLOSED AUDIT: Prior to generating narrative, you MUST run the Pre-Flight Evaluation block, verifying Chronology, Finance math, Roster updates, and Anti-Cozy friction.
+4. IMMUTABLE LORE & ROSTER INTEGRITY: LORE_LEDGER facts and NPC lifelong traits are permanent. Strictly enforce the Banned Name list (Marcus, Chloe, Julian, Thorne, Vance, Vane, Aronson, Lindqvist, Leo, Aris).
+
+---
+
+### SECTION 2: THE 4-STEP PRE-FLIGHT EVALUATION (<pre_flight_eval>)
+Before outputting any text, calculate and verify the following inside <pre_flight_eval>:
+- S1: MATH & TIME: Update Cash (Inflows - Outflows), Debt, and age (+1 Mo for all entities). Check annual CPI/COLA if Turn % 12 == 0/1.
+- S2: FRICTION & ANTI-COZY: Confirm systemic resistance was injected. Verify Skill Gap penalties (Delta 0: Cost, Delta 1: Partial, Delta 2+: Failure/Trap).
+- S3: ROSTER & LORE: Audit Dynasty/Network rosters. Prune unanchored casual contacts ([SOC-*]) after 4 turns of zero interaction. Ensure direct kin/spouses have immunity.
+- S4: DYNAMICS & ARCS: Process active Narrative Seeds, 2-4 autonomous NPC lifecycle shifts, health countdowns, and potential Breakup/Milestone hard-stops.
+
+---
+
+### SECTION 4: OUTPUT FORMAT
+Every turn MUST follow this exact sequence:
+1. <pre_flight_eval> (The 4-step verification block above)
+2. STATUS_ANCHOR (YAML block) + PLAYER QUICK-DASHBOARD (ASCII meters)
+3. PART 1: The Life Chronicle (Status acknowledgment, narrative crucible, life audit)
+4. PART 2: The Detailed Life Log (Unfiltered prose, Tri-Vector intimacy, NPC interactions, action outcomes)
+5. PART 3: The Neighborhood & Family Log (Delta-only markdown table for selected 2-4 NPCs)
+[FOOTER]: Turn Count | Current Date`;
 
     let state = {
       apiKey: localStorage.getItem('life_sim_api_key') || '',
-      rules: localStorage.getItem('life_sim_rules') || ALPHA_94_RULES,
+      rules: localStorage.getItem('life_sim_rules') || ALPHA_10_RULES,
       statusAnchor: localStorage.getItem('life_sim_anchor') || '',
       logHistory: localStorage.getItem('life_sim_log') || PHASE_1_QUESTIONNAIRE
     };
 
     document.getElementById('log-container').innerText = state.logHistory;
     updateStatusCard(state.statusAnchor);
-    updateYamlBox(state.statusAnchor);
 
     if (!state.statusAnchor) {
       document.getElementById('move-input').value = `Initialize Character:\n1. Full Name: \n2. Starting Date: \n3. Age (XX Yrs YY Mos): \n4. Demographics: \n5. Class Tier: \n6. Creed/Traditions: \n7. Health Baseline: \n8. Sex Ed & Contraception: \n9. Traits/Flaws: \n10. Psychological Tier: \n11. Style & Markers: \n12. Career/Aptitudes: \n13. Aspiration Path: \n14. Hobbies/Passions: \n15. Location & Assets: \n16. Starting Lineage & Network: `;
@@ -170,17 +184,10 @@ Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lan
         const m = yamlText.match(new RegExp(`${key}:\\s*(.+)`, 'i'));
         return m ? m[1].replace(/['"]/g, '').trim() : '--';
       };
-      document.getElementById('stat-name').innerText = getVal('Name');
+      document.getElementById('stat-name').innerText = getVal('Name') || getVal('Protagonist_Name');
       document.getElementById('stat-age').innerText = getVal('Age');
-      document.getElementById('stat-fin').innerText = getVal('Cash') || getVal('Net');
+      document.getElementById('stat-fin').innerText = getVal('Cash') || getVal('Net') || getVal('Fin');
       document.getElementById('stat-mood').innerText = getVal('Mood');
-    }
-
-    function updateYamlBox(yamlText) {
-      const yamlEl = document.getElementById('yaml-container');
-      if (!yamlText) return;
-      const cleanedYaml = yamlText.replace(/```yaml/gi, '').replace(/```/g, '').trim();
-      yamlEl.innerText = cleanedYaml;
     }
 
     async function handleTurn() {
@@ -196,10 +203,10 @@ Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lan
       const logEl = document.getElementById('log-container');
       const btn = document.getElementById('exec-btn');
       btn.disabled = true;
-      logEl.innerText += `\n\n> Action: ${action}\n\n[Processing Alpha 9.4 29-step telemetry audit & turn execution...]`;
+      logEl.innerText += `\n\n> Action: ${action}\n\n[Processing Alpha 10.0 pre-flight audit & turn execution...]`;
       logEl.scrollTop = logEl.scrollHeight;
 
-      const promptPayload = `${state.rules}\n\nPREVIOUS STATUS ANCHOR:\n${state.statusAnchor}\n\nPLAYER ACTION:\n${action}`;
+      const promptPayload = `${state.rules}\n\n=== IMMUTABLE STATE ANCHOR ===\n${state.statusAnchor}\n\n=== COMPLETE PREVIOUS NARRATIVE HISTORY ===\n${state.logHistory}\n\n=== CURRENT PLAYER ACTION ===\n${action}`;
 
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${state.apiKey}`, {
@@ -223,21 +230,18 @@ Enforce strict difficulty, zero-cozy bias, 75%-90% expertise gates on out-of-lan
         if (data.error) throw new Error(data.error.message);
 
         const reply = data.candidates[0].content.parts[0].text;
-        let cleanTextOutput = reply;
         
-        // Extract YAML Status Anchor
+        // Extract YAML Status Anchor to update status header
         const yamlMatch = reply.match(/```yaml([\s\S]*?)```/i) || reply.match(/STATUS ANCHOR[\s\S]*?(?=\n\n|\n[A-Z])/i);
         if (yamlMatch) {
           state.statusAnchor = yamlMatch[0];
           localStorage.setItem('life_sim_anchor', state.statusAnchor);
           updateStatusCard(state.statusAnchor);
-          updateYamlBox(state.statusAnchor);
-          cleanTextOutput = cleanTextOutput.replace(yamlMatch[0], '').trim();
         }
 
-        state.logHistory = cleanTextOutput;
-        localStorage.setItem('life_sim_log', cleanTextOutput);
-        logEl.innerText = cleanTextOutput;
+        state.logHistory = reply;
+        localStorage.setItem('life_sim_log', reply);
+        logEl.innerText = reply;
         logEl.scrollTop = 0;
         inputEl.value = '';
 
